@@ -3,12 +3,12 @@
 import QrCodeRender from "@/components/QrCodeRender";
 
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ordersApi } from "../api/orders.api";
-import { GroupedData, RawOrderItem } from "../../types/menuOrder.type";
-import { checkSlipApi, SlipVerify } from "../api/slip-verifications.api";
 import { RequestCamera, Webcam } from "@/components/order/Webcam";
 import { QrcodeReceive } from "@/components/order/QrcodeReceive";
-import { slipVerifySchema } from "../../schema/slipVerifySchema";
+import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
+import { ordersApi } from "@/api/orders.api";
+import { slipVerifySchema } from "@/schema/slipVerifySchema";
+import { SlipVerify } from "@/api/slip-verifications.api";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
   const [orders, setOrders] = useState<RawOrderItem[]>([]);
