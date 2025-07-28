@@ -1,9 +1,9 @@
 import { CartItem, OrderPayload } from "@/types/menuOrder.type";
-import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 import { FaCartShopping } from "react-icons/fa6";
 import { IoCloseCircle } from "react-icons/io5";
 import { Button } from "../ui/button";
 import { FaCircleMinus, FaCirclePlus } from "react-icons/fa6";
+import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 type CartIconPreviewProps = {
   getTotalOrderItems: () => number;
   setPreviewCart: () => void;

@@ -1,10 +1,10 @@
 "use client";
+import { api } from "@/api/lineUsers.api";
 import { Button } from "@/components/ui/button";
+import { LineUser } from "@/types/lineUser";
 import liff from "@line/liff";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { LineUser } from "../../types/lineUser";
-import { api } from "@/app/api/lineUsers.api";
 
 const Page = () => {
   const [user, setUser] = useState<LineUser | null>(null);

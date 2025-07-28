@@ -1,4 +1,4 @@
-import Order from "@/app/pre-load/Order";
+import Order from "@/pre-load/Order";
 
 type PageProps = {
   params: Promise<{ orderId: string }>;

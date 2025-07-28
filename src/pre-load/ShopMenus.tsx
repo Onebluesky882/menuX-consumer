@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { shopApi } from "../api/shop.api";
 import Image from "next/image";
 import { menuApi } from "../api/menu.api";
-import { MenuItem } from "../../types/menuOrder.type";
 import { CartIconPreview, CartPreview } from "@/components/menu/CartPreview";
 import { TotalCard } from "@/components/menu/TotalCard";
 import { useRouter } from "next/navigation";
 import { useCart } from "../hooks/useCart";
-import { Shop } from "../../types/shop.type";
+import { Shop } from "@/types/shop.type";
+import { MenuItem } from "@/types/menuOrder.type";
 
 const ShopMenus = ({ shopId }: { shopId: string }) => {
   const [shop, setShop] = useState<Shop>();

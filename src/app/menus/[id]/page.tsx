@@ -1,4 +1,4 @@
-import ShopMenus from "@/app/pre-load/ShopMenus";
+import ShopMenus from "@/pre-load/ShopMenus";
 
 export default async function MenuPage({
   params,
