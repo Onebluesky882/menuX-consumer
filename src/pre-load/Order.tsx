@@ -8,7 +8,7 @@ import { QrcodeReceive } from "@/components/order/QrcodeReceive";
 import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
 import { ordersApi } from "@/api/orders.api";
 import { slipVerifySchema } from "@/schema/slipVerifySchema";
-import { SlipVerify } from "@/api/slip-verifications.api";
+import { checkSlipApi, SlipVerify } from "@/api/slip-verifications.api";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
   const [orders, setOrders] = useState<RawOrderItem[]>([]);
