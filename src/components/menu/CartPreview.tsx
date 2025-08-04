@@ -1,8 +1,7 @@
 import { CartItem, OrderPayload } from "@/types/menuOrder.type";
-import { FaCartShopping } from "react-icons/fa6";
+import { FaCartShopping, FaCircleMinus, FaCirclePlus } from "react-icons/fa6";
 import { IoCloseCircle } from "react-icons/io5";
 import { Button } from "../ui/button";
-import { FaCircleMinus, FaCirclePlus } from "react-icons/fa6";
 import { Dialog, DialogContent, DialogTitle } from "../ui/dialog";
 type CartIconPreviewProps = {
   getTotalOrderItems: () => number;
@@ -58,7 +57,7 @@ export const CartPreview = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="z-50 fixed bottom-0 left-0 right-0 max-h-[70vh] w-full rounded-t-2xl bg-white p-6 shadow-xl border-none">
+      <DialogContent className="z-50 fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl max-h-[80vh] rounded-2xl bg-white p-6 shadow-xl border-none overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <DialogTitle className="text-xl font-bold text-gray-800">
@@ -86,7 +85,7 @@ export const CartPreview = ({
                   {index + 1}. {group.menuName}
                 </div>
 
-                {group.options.map((option) => (
+                {group.options.map(option => (
                   <div
                     key={option.optionId}
                     className="flex mt-2 justify-between text-md text-gray-600 pl-4"
@@ -132,7 +131,7 @@ export const CartPreview = ({
           onClick={() => {
             const payload = {
               shopId: shopId,
-              items: cart.map((menu) => ({
+              items: cart.map(menu => ({
                 menuId: menu.menuId,
                 quantity: menu.quantity,
                 priceEach: menu.basePrice,

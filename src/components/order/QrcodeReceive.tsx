@@ -10,11 +10,12 @@ export const QrcodeReceive = () => {
         บัญชี: <strong>mademyday วันของฉัน</strong>
       </p>
       <Image
-        src="/IMG_2043.PNG"
+        src="/IMG_1198.JPG"
         alt="QR Code"
         width={200}
         height={200}
         className="mx-auto rounded-md border"
+        priority
       />
     </div>
   );

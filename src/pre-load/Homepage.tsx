@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { LucideCheckCircle, LucideStore } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { shopApi } from "../api/shop.api";
 
 // Mock data
 const mockShops = [
@@ -24,6 +25,14 @@ const Homepage = () => {
       }, 500);
     };
     fetchMockShops();
+  }, []);
+
+  useEffect(() => {
+    const getAllShop = async () => {
+      const res = await shopApi.getAllShop();
+      console.log("res", res.data);
+    };
+    getAllShop();
   }, []);
 
   return (
@@ -65,13 +74,13 @@ const Homepage = () => {
           🛒 ร้านค้าที่เปิดให้บริการ
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {shops.map((s) => (
+          {shops.map(s => (
             <ShopCard
               key={s.id}
               id={s.id}
               name={s.name}
               active={s.active}
-              onClick={(path) => router.push(path)}
+              onClick={path => router.push(path)}
             />
           ))}
         </div>

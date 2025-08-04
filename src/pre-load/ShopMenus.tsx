@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { shopApi } from "../api/shop.api";
-import Image from "next/image";
-import { menuApi } from "../api/menu.api";
 import { CartIconPreview, CartPreview } from "@/components/menu/CartPreview";
-import { TotalCard } from "@/components/menu/TotalCard";
-import { useRouter } from "next/navigation";
-import { useCart } from "../hooks/useCart";
-import { Shop } from "@/types/shop.type";
 import { MenuItem } from "@/types/menuOrder.type";
+import { Shop } from "@/types/shop.type";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { menuApi } from "../api/menu.api";
+import { shopApi } from "../api/shop.api";
+import { TotalCard } from "../components/menu/TotalCard";
+import { useCart } from "../hooks/useCart";
 
 const ShopMenus = ({ shopId }: { shopId: string }) => {
   const [shop, setShop] = useState<Shop>();
@@ -49,7 +49,7 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
 
   const handlePreviewCart = () => {
     try {
-      setPreviewCart((prev) => !prev);
+      setPreviewCart(prev => !prev);
     } catch (error) {
       console.error(error);
     }
@@ -79,7 +79,7 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
           <div className="">
             <h2 className="text-center text-3xl p-2 m-2">{shop?.name}</h2>
             <div className="bg-amber-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-              {menusOption.map((menu) => (
+              {menusOption.map(menu => (
                 <div
                   key={menu.id}
                   className="bg-white  rounded-2xl shadow-md overflow-hidden touch-manipulation"
@@ -101,7 +101,7 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
                     </h2>
 
                     <div className="mt-2 space-y-1">
-                      {menu.menuOptions.map((option) => (
+                      {menu.menuOptions.map(option => (
                         <button
                           onClick={() =>
                             addMenuOptionToCart(option.id, menusOption)
@@ -144,7 +144,7 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
           <div>
             {/* 🔹 GLASS BACKDROP OVERLAY */}
             <div
-              className="fixed inset-0 z-40 bg-black/10 backdrop-blur-xs transition-all"
+              className="fixed inset-0  z-40 bg-black/10 backdrop-blur-xs transition-all"
               onClick={() => setPreviewCart(false)}
             />
 

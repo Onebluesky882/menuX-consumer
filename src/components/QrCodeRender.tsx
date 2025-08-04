@@ -3,21 +3,30 @@
 import { decodeQR } from "@/lib/scanQrcode";
 import { useRef, useState } from "react";
 import { BsFillImageFill } from "react-icons/bs";
-const QrCodeRender = () => {
+
+type Props = {
+  handleScan: (qrcode: string) => void;
+};
+
+const QrCodeRender = ({ handleScan }: Props) => {
   const [numQrCode, setNumQrCode] = useState<string | null>(null);
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target?.files?.[0];
 
     if (!file) return;
     const code = await decodeQR(file);
-    setNumQrCode(code);
+    if (code) {
+      setNumQrCode(code);
+      handleScan(code);
+    }
   };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleClick = () => {
     fileInputRef.current?.click();
   };
+
   return (
-    <div>
+    <div className="flex flex-col">
       <input
         hidden
         ref={fileInputRef}
@@ -25,7 +34,7 @@ const QrCodeRender = () => {
         accept="image/*"
         onChange={handleFileChange}
       />
-      {numQrCode && <p>decode qr code : {numQrCode}</p>}
+
       <BsFillImageFill
         onClick={handleClick}
         size={40}

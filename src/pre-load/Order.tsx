@@ -1,14 +1,14 @@
 "use client";
 
-import QrCodeRender from "@/components/QrCodeRender";
-
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { RequestCamera, Webcam } from "@/components/order/Webcam";
-import { QrcodeReceive } from "@/components/order/QrcodeReceive";
-import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
 import { ordersApi } from "@/api/orders.api";
-import { slipVerifySchema } from "@/schema/slipVerifySchema";
 import { checkSlipApi, SlipVerify } from "@/api/slip-verifications.api";
+import { QrcodeReceive } from "@/components/order/QrcodeReceive";
+import { slipVerifySchema } from "@/schema/slipVerifySchema";
+import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { InsertSlip } from "../components/order/insertSlip";
+import { Webcam } from "../components/order/Webcam";
+import QrCodeRender from "../components/QrCodeRender";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
   const [orders, setOrders] = useState<RawOrderItem[]>([]);
@@ -24,7 +24,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
 
   const grouped = useMemo(() => {
     const result: GroupedData = {};
-    orders?.forEach((item) => {
+    orders?.forEach(item => {
       const menu = item.menuName;
       const price = parseFloat(item.priceEach).toFixed(2);
       const qty = parseFloat(item.quantity);
@@ -59,7 +59,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
   );
 
   const handleCamera = useCallback(() => {
-    setOpenCamera((prev) => !prev);
+    setOpenCamera(prev => !prev);
   }, []);
 
   const fetchOrder = useCallback(async () => {
@@ -81,7 +81,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
         orderId: orderId,
       };
       const parsed = slipVerifySchema.safeParse(prepareData);
-
+      console.log("parsed", parsed);
       if (!parsed.success) {
         throw new Error();
       }
@@ -125,7 +125,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
   );
 
   const renderQrCodeData = () => {
-    const hasQrData = qrcode.some((item) => item.qrcode_data?.trim());
+    const hasQrData = qrcode.some(item => item.qrcode_data?.trim());
     if (hasQrData) {
       return (
         <div className="bg-gray-100 p-3 rounded-lg text-sm text-gray-800 break-words">
@@ -161,25 +161,28 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
         <p className="text-xl">ใบสรุปรายการอาหาร</p>
         <p className="text-gray-600 mt-1 text-base">Order ID: {orderId}</p>
       </div>
-
       {/* Order Items */}
       {renderOrderItems()}
-
       {/* Qr Code  receive*/}
       {!openCamera && <QrcodeReceive />}
-
       {/* camera section */}
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
-        {!openCamera && <RequestCamera QrCodeRender={QrCodeRender} />}
-        <Webcam
-          openCamera={openCamera}
-          handleCamera={handleCamera}
-          handleScan={handleScan}
-        />
+        {!openCamera && (
+          <Webcam
+            openCamera={openCamera}
+            handleCamera={handleCamera}
+            handleScan={handleScan}
+          />
+        )}
 
         {/* QR Code Data Display */}
         {renderQrCodeData()}
       </div>
+      <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
+        <InsertSlip>
+          <QrCodeRender handleScan={handleScan} />
+        </InsertSlip>
+      </div>{" "}
     </div>
   );
 };
