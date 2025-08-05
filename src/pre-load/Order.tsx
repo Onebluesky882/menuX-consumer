@@ -5,15 +5,21 @@ import { checkSlipApi, SlipVerify } from "@/api/slip-verifications.api";
 import { QrcodeReceive } from "@/components/order/QrcodeReceive";
 import { slipVerifySchema } from "@/schema/slipVerifySchema";
 import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { InsertSlip } from "../components/order/insertSlip";
 import { Webcam } from "../components/order/Webcam";
 import QrCodeRender from "../components/QrCodeRender";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
+  const router = useRouter();
   const [orders, setOrders] = useState<RawOrderItem[]>([]);
   const [openCamera, setOpenCamera] = useState(false);
   const [qrcode, setQrcode] = useState<SlipVerify[]>([]);
+  const [resetKey, setResetKey] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isReset, setIsReset] = useState(false);
 
   const totalPrice = useMemo(() => {
     return orders?.reduce(
@@ -54,6 +60,8 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
       };
       setQrcode([data]);
       setOpenCamera(false);
+      setIsReset(false); // Reset the reset flag when new QR code is scanned
+      setError(null); // Clear any previous errors
     },
     [totalPrice, orderId]
   );
@@ -72,24 +80,73 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     }
   }, [orderId]);
 
+  const resetQrCode = useCallback(() => {
+    setQrcode([]);
+    setError(null);
+    setIsReset(true);
+    setResetKey(prev => prev + 1);
+    console.log("🔄 QR Code reset triggered");
+  }, []);
+
+  // Updated verifySlip with reset mechanism
   const verifySlip = useCallback(async () => {
-    if (qrcode.length === 0) return;
+    if (qrcode.length === 0 || isReset) return;
+
     try {
       const prepareData: SlipVerify = {
         amount: String(totalPrice),
         qrcode_data: qrcode[0].qrcode_data,
         orderId: orderId,
       };
+
+      setLoading(true);
+      setError(null);
+
       const parsed = slipVerifySchema.safeParse(prepareData);
-      console.log("parsed", parsed);
       if (!parsed.success) {
-        throw new Error();
+        throw new Error("Invalid slip data format");
       }
-      await checkSlipApi.postSlip(parsed.data);
-    } catch (error) {
+
+      const slipRes = await checkSlipApi.postSlip(parsed.data);
+
+      if (slipRes && slipRes.data) {
+        console.log("✅ Slip verification successful:", slipRes.data);
+
+        // Update order status
+        const orderRes = await ordersApi.updateOrderPurchase(orderId);
+        console.log("✅ Order updated:", orderRes.data);
+
+        if (orderRes.data.length !== 0) {
+          router.push(`purchase/${orderId}`);
+        }
+      } else {
+        throw new Error("No data received from slip verification");
+      }
+    } catch (error: any) {
       console.error("❌ Slip verification failed:", error);
+
+      let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
+
+      if (error.response?.status === 400) {
+        errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
+      } else if (error.response?.status === 404) {
+        errorMessage = "ไม่พบข้อมูลสลิป";
+      } else if (error.response?.status === 422) {
+        errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
+
+      // Auto reset after 3 seconds
+      setTimeout(() => {
+        resetQrCode();
+      }, 3000);
+    } finally {
+      setLoading(false);
     }
-  }, [qrcode, totalPrice, orderId]);
+  }, [qrcode, totalPrice, orderId, isReset, router, resetQrCode]);
 
   // Effects
   useEffect(() => {
@@ -129,14 +186,45 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     if (hasQrData) {
       return (
         <div className="bg-gray-100 p-3 rounded-lg text-sm text-gray-800 break-words">
-          <h3 className="font-medium mb-1">QR Code slip:</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-medium">QR Code slip:</h3>
+            <button
+              onClick={resetQrCode}
+              className="text-xs text-red-600 hover:text-red-800 underline"
+            >
+              Reset
+            </button>
+          </div>
           <div className="space-y-1">
             {qrcode.map((item, index) => (
               <div key={`qr-${index}`} className="font-mono text-xs">
-                {item.qrcode_data}
+                {item.qrcode_data.substring(0, 50)}...
               </div>
             ))}
           </div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="mt-2 text-center">
+              <div className="inline-flex items-center text-blue-600">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                กำลังตรวจสอบสลิป...
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-xs">
+              <div className="flex items-center">
+                <span className="mr-2">⚠️</span>
+                {error}
+              </div>
+              <div className="mt-1 text-gray-600">
+                จะรีเซ็ตอัตโนมัติใน 3 วินาที...
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -151,7 +239,6 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     );
   }
 
-  console.log("openCamera", openCamera);
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-2xl shadow-lg border text-gray-800 space-y-6 text-xl font-medium leading-relaxed">
       {/* Header / ร้าน */}
@@ -162,13 +249,17 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
         <p className="text-xl">ใบสรุปรายการอาหาร</p>
         <p className="text-gray-600 mt-1 text-base">Order ID: {orderId}</p>
       </div>
+
       {/* Order Items */}
       {renderOrderItems()}
-      {/* Qr Code  receive*/}
+
+      {/* QR Code receive*/}
       {!openCamera && <QrcodeReceive />}
-      {/* camera section */}
+
+      {/* Camera section */}
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
         <Webcam
+          key={`webcam-${resetKey}`} // Force remount when resetKey changes
           openCamera={openCamera}
           handleCamera={handleCamera}
           handleScan={handleScan}
@@ -177,11 +268,15 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
         {/* QR Code Data Display */}
         {renderQrCodeData()}
       </div>
+
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
         <InsertSlip>
-          <QrCodeRender handleScan={handleScan} />
+          <QrCodeRender
+            key={`qr-render-${resetKey}`} // Also reset QrCodeRender
+            handleScan={handleScan}
+          />
         </InsertSlip>
-      </div>{" "}
+      </div>
     </div>
   );
 };

@@ -7,5 +7,7 @@ export const ordersApi = {
     axiosInstance.get(`order-items/${orderId}`),
 
   getOrderPurchase: (orderId: string) =>
-    axiosInstance.get(`purchase/${orderId}`),
+    axiosInstance.get(`/orders/${orderId}`),
+  updateOrderPurchase: (orderId: string) =>
+    axiosInstance.patch(`/orders/${orderId}`),
 };
