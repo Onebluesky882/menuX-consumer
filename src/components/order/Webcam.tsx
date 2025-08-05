@@ -1,7 +1,6 @@
 import CameraCapture from "../CameraCapture";
 import { QrcodeLiveScan, TouchClick } from "../DotLottieReact";
 import { Button } from "../ui/button";
-
 type WebcamProps = {
   openCamera: boolean;
   handleCamera: () => void;
@@ -27,9 +26,13 @@ export const Webcam = ({
       {!openCamera && <QrcodeLiveScan />}
       {openCamera && (
         <div className="w-full max-w-sm border rounded-lg overflow-hidden">
-          <CameraCapture onScan={handleScan} enabled={openCamera} />
+          <CameraCapture onScan={handleScan} />
         </div>
       )}
     </div>
   );
+};
+
+export const RequestCamera = () => {
+  return <div></div>;
 };
