@@ -27,7 +27,7 @@ export const Webcam = ({
       {!openCamera && <QrcodeLiveScan />}
       {openCamera && (
         <div className="w-full max-w-sm border rounded-lg overflow-hidden">
-          <CameraCapture onScan={handleScan} />
+          <CameraCapture onScan={handleScan} enabled={openCamera} />
         </div>
       )}
     </div>

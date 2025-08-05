@@ -151,6 +151,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     );
   }
 
+  console.log("openCamera", openCamera);
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-2xl shadow-lg border text-gray-800 space-y-6 text-xl font-medium leading-relaxed">
       {/* Header / ร้าน */}
@@ -167,13 +168,11 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
       {!openCamera && <QrcodeReceive />}
       {/* camera section */}
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
-        {!openCamera && (
-          <Webcam
-            openCamera={openCamera}
-            handleCamera={handleCamera}
-            handleScan={handleScan}
-          />
-        )}
+        <Webcam
+          openCamera={openCamera}
+          handleCamera={handleCamera}
+          handleScan={handleScan}
+        />
 
         {/* QR Code Data Display */}
         {renderQrCodeData()}

@@ -22,3 +22,13 @@ export const TouchClick = () => {
     </div>
   );
 };
+
+export const Cooking = () => {
+  return (
+    <DotLottieReact
+      src="https://lottie.host/5b585fa6-0731-42c8-a4e1-840e422b2554/ewmp8Lg4A7.lottie"
+      loop
+      autoplay
+    />
+  );
+};
