@@ -85,9 +85,9 @@ export const CartPreview = ({
                   {index + 1}. {group.menuName}
                 </div>
 
-                {group.options.map(option => (
+                {group.options.map((option, index) => (
                   <div
-                    key={option.optionId}
+                    key={`${option.optionId}-${index}`}
                     className="flex mt-2 justify-between text-md text-gray-600 pl-4"
                   >
                     {" "}
