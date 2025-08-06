@@ -1,10 +1,10 @@
 import OrderPurchase from "../../../../pre-load/OrderPurchase";
 
-type PageProps = {
+export default async function MenuPage({
+  params,
+}: {
   params: Promise<{ orderId: string }>;
-};
-
-export default async function Page({ params }: PageProps) {
+}) {
   const { orderId } = await params;
 
   return <OrderPurchase orderId={orderId} />;
