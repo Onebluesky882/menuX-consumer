@@ -3,12 +3,12 @@
 import { CartIconPreview, CartPreview } from "@/components/menu/CartPreview";
 import { MenuItem } from "@/types/menuOrder.type";
 import { Shop } from "@/types/shop.type";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { menuApi } from "../api/menu.api";
 import { shopApi } from "../api/shop.api";
 import { TotalCard } from "../components/menu/TotalCard";
+import ShopCard from "../components/shop/ShopCard";
 import { useCart } from "../hooks/useCart";
 
 const ShopMenus = ({ shopId }: { shopId: string }) => {
@@ -69,68 +69,25 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
     decreaseQuantity(optionId);
   };
   console.log("cart", cartItems);
-
   return (
     <>
       {loading ? (
         <div>loading...</div>
       ) : (
-        <div className="">
-          <div className="">
-            <h2 className="text-center text-3xl p-2 m-2">{shop?.name}</h2>
-            <div className="bg-amber-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-              {menusOption.map(menu => (
-                <div
-                  key={menu.id}
-                  className="bg-white  rounded-2xl shadow-md overflow-hidden touch-manipulation"
-                >
-                  <div>
-                    {menu.images[0] && (
-                      <Image
-                        src={menu.images[0].imageUrl}
-                        alt={menu.name}
-                        width={500}
-                        height={500}
-                        className="w-full h-full object-contain"
-                      />
-                    )}
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <h2 className="text-xl  font-semibold text-gray-800">
-                      {menu.name}
-                    </h2>
-
-                    <div className="mt-2 space-y-1">
-                      {menu.menuOptions.map(option => (
-                        <button
-                          onClick={() =>
-                            addMenuOptionToCart(option.id, menusOption)
-                          }
-                          key={option.id}
-                          className="w-full flex justify-between items-center bg-green-50 hover:bg-green-200 active:bg-green-300 rounded-xl px-4 py-4 text-xl font-medium text-gray-800 shadow-md transition-all duration-150"
-                        >
-                          <span>{option.label}</span>
-                          <span className="text-green-700">
-                            {option.price} บาท
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div>
-            <TotalCard
-              cart={cartItems}
-              getTotalOrderPrice={getTotalOrderPrice}
-              getTotalOrderItems={getTotalOrderItems}
-            />
-          </div>
+        <div>
+          <TotalCard
+            cart={cartItems}
+            getTotalOrderPrice={getTotalOrderPrice}
+            getTotalOrderItems={getTotalOrderItems}
+          />
+          <ShopCard
+            menusOption={menusOption}
+            addMenuOptionToCart={addMenuOptionToCart}
+          />
         </div>
       )}
-      <div className=" sticky   bottom-0 ">
+
+      <div className="sticky bottom-0">
         {cartItems.length > 0 && !previewCart && (
           <CartIconPreview
             getTotalOrderItems={getTotalOrderItems}
@@ -139,29 +96,25 @@ const ShopMenus = ({ shopId }: { shopId: string }) => {
         )}
       </div>
 
-      <div>
-        {previewCart && (
-          <div>
-            {/* 🔹 GLASS BACKDROP OVERLAY */}
-            <div
-              className="fixed inset-0  z-40 bg-black/10 backdrop-blur-xs transition-all"
-              onClick={() => setPreviewCart(false)}
-            />
+      {previewCart && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/10 backdrop-blur-xs transition-all"
+            onClick={() => setPreviewCart(false)}
+          />
 
-            {/* 🔹 CART PREVIEW */}
-            <CartPreview
-              open={previewCart}
-              onOpenChange={setPreviewCart}
-              cart={cartItems}
-              totalOrdersPrice={getTotalOrderPrice}
-              handleStoreOrders={handleStoreOrders}
-              shopId={""}
-              increaseQuantity={handleIncrease}
-              decreaseQuantity={handleDecrease}
-            />
-          </div>
-        )}
-      </div>
+          <CartPreview
+            open={previewCart}
+            onOpenChange={setPreviewCart}
+            cart={cartItems}
+            totalOrdersPrice={getTotalOrderPrice}
+            handleStoreOrders={handleStoreOrders}
+            shopId={shop?.id ?? ""}
+            increaseQuantity={handleIncrease}
+            decreaseQuantity={handleDecrease}
+          />
+        </>
+      )}
     </>
   );
 };
