@@ -75,8 +75,20 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     try {
       const res = await ordersApi.getOrderById(orderId);
       setOrders(res.data.data);
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
       console.error("❌ Failed to fetch order:", error);
+      if (error.response?.status === 400) {
+        errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
+      } else if (error.response?.status === 404) {
+        errorMessage = "ไม่พบข้อมูลสลิป";
+      } else if (error.response?.status === 422) {
+        errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setError(errorMessage);
     }
   }, [orderId]);
 
@@ -140,13 +152,19 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
       setError(errorMessage);
 
       // Auto reset after 3 seconds
-      setTimeout(() => {
-        resetQrCode();
-      }, 3000);
-    } finally {
-      setLoading(false);
     }
-  }, [qrcode, totalPrice, orderId, isReset, router, resetQrCode]);
+  }, [qrcode, totalPrice, orderId, isReset, router]);
+
+  // ใส่ใน component OrderSummary
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        resetQrCode();
+      }, 5000); // 5 วินาที
+
+      return () => clearTimeout(timer);
+    }
+  }, [error, resetQrCode]);
 
   // Effects
   useEffect(() => {
@@ -215,13 +233,13 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
 
           {/* Error State */}
           {error && (
-            <div className="mt-2 p-2 bg-red-100 border border-red-300 rounded text-red-700 text-xs">
+            <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
               <div className="flex items-center">
                 <span className="mr-2">⚠️</span>
                 {error}
               </div>
-              <div className="mt-1 text-gray-600">
-                จะรีเซ็ตอัตโนมัติใน 3 วินาที...
+              <div className="mt-1 text-gray-600 text-xs">
+                จะรีเซ็ตอัตโนมัติใน 5 วินาที...
               </div>
             </div>
           )}
