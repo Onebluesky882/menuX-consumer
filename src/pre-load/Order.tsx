@@ -7,9 +7,10 @@ import { slipVerifySchema } from "@/schema/slipVerifySchema";
 import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { InsertSlip } from "../components/order/insertSlip";
+import { InsertSlip, ScanQrTitle } from "../components/order";
+import RenderOrderItems from "../components/order/RenderOrderItems";
+import RenderQrCodeData from "../components/order/RenderQrcode";
 import { Webcam } from "../components/order/Webcam";
-import QrCodeRender from "../components/QrCodeRender";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
   const router = useRouter();
@@ -175,80 +176,6 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     verifySlip();
   }, [verifySlip]);
 
-  const renderOrderItems = () => (
-    <div>
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">รายการอาหาร</h2>
-      {Object.entries(grouped).map(([menuName, prices], index) => (
-        <div key={`${menuName}-${index}`} className="mb-4">
-          <h3 className="font-bold text-xl text-gray-700 mb-1">{menuName}</h3>
-          <ul className="ml-4 space-y-1 text-lg">
-            {Object.entries(prices).map(([price, summary], i) => (
-              <li key={`${price}-${i}`} className="flex justify-between py-1">
-                <span>
-                  {summary.optionLabel} × {summary.totalQuantity}
-                </span>
-                <span>{summary.totalPrice.toFixed(2)} ฿</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-      <div className="border-t pt-4 mt-4 text-right text-2xl font-bold">
-        รวมทั้งสิ้น: <span className="text-green-600">{totalPrice} ฿</span>
-      </div>
-    </div>
-  );
-
-  const renderQrCodeData = () => {
-    const hasQrData = qrcode.some(item => item.qrcode_data?.trim());
-    if (hasQrData) {
-      return (
-        <div className="bg-gray-100 p-3 rounded-lg text-sm text-gray-800 break-words">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-medium">QR Code slip:</h3>
-            <button
-              onClick={resetQrCode}
-              className="text-xs text-red-600 hover:text-red-800 underline"
-            >
-              Reset
-            </button>
-          </div>
-          <div className="space-y-1">
-            {qrcode.map((item, index) => (
-              <div key={`qr-${index}`} className="font-mono text-xs">
-                {item.qrcode_data.substring(0, 50)}...
-              </div>
-            ))}
-          </div>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="mt-2 text-center">
-              <div className="inline-flex items-center text-blue-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                กำลังตรวจสอบสลิป...
-              </div>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && (
-            <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded text-red-700 text-sm">
-              <div className="flex items-center">
-                <span className="mr-2">⚠️</span>
-                {error}
-              </div>
-              <div className="mt-1 text-gray-600 text-xs">
-                จะรีเซ็ตอัตโนมัติใน 5 วินาที...
-              </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-
   if (!orderId) {
     return (
       <div className="max-w-lg mx-auto p-6 text-center">
@@ -259,21 +186,11 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
 
   return (
     <div className="max-w-lg mx-auto p-6 bg-white rounded-2xl shadow-lg border text-gray-800 space-y-6 text-xl font-medium leading-relaxed">
-      {/* Header / ร้าน */}
-      <div className="text-center border-b pb-4">
-        <h1 className="text-4xl font-bold tracking-wide text-blue-600">
-          MenuX
-        </h1>
-        <p className="text-xl">ใบสรุปรายการอาหาร</p>
-        <p className="text-gray-600 mt-1 text-base">Order ID: {orderId}</p>
-      </div>
-
+      <ScanQrTitle orderId={orderId} />
       {/* Order Items */}
-      {renderOrderItems()}
-
+      <RenderOrderItems grouped={grouped} totalPrice={totalPrice} />
       {/* QR Code receive*/}
       {!openCamera && <QrcodeReceive />}
-
       {/* Camera section */}
       <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
         <Webcam
@@ -284,17 +201,15 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
         />
 
         {/* QR Code Data Display */}
-        {renderQrCodeData()}
+        <RenderQrCodeData
+          qrcode={qrcode}
+          resetQrCode={resetQrCode}
+          loading={loading}
+          error={error}
+        />
       </div>
-
-      <div className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 max-w-xl mx-auto">
-        <InsertSlip>
-          <QrCodeRender
-            key={`qr-render-${resetKey}`} // Also reset QrCodeRender
-            handleScan={handleScan}
-          />
-        </InsertSlip>
-      </div>
+      // insert slip
+      <InsertSlip />
     </div>
   );
 };
