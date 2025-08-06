@@ -1,10 +1,13 @@
+import { GroupedMenuItem } from "../../types/order/orderPurchase.type";
+
 type GroupMenuProps = {
   groupedItems: GroupedMenuItem[];
 };
-const OrderPurchaseCard = () => {
+
+export default function GroupMenuComponent({ groupedItems }: GroupMenuProps) {
   return (
     <div className="divide-y divide-gray-200">
-      {groupMenu(orderPurchase.orderItems).map((groupItem, index) => (
+      {groupedItems.map((groupItem, index) => (
         <div key={index} className="py-3">
           <div className="flex justify-between">
             <div>
@@ -27,5 +30,4 @@ const OrderPurchaseCard = () => {
       ))}
     </div>
   );
-};
-export default OrderPurchaseCard;
+}
