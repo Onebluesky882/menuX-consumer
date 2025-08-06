@@ -6,3 +6,6 @@ updateOrderPurchase: (orderId: string) =>
 axiosInstance.patch(`/orders/${orderId}`),
 
     each menuOption change status to done
+
+....
+move some logic to hooks
