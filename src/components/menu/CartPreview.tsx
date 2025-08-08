@@ -74,7 +74,9 @@ export const CartPreview = ({
         {/* Cart Items */}
         <div className="space-y-3 overflow-y-auto max-h-[40vh] pr-2">
           {groupedCartArray.length === 0 ? (
-            <p className="text-center text-gray-500">ไม่มีสินค้าในตะกร้า</p>
+            <p className="text-center text-gray-500 animate-pulse">
+              loading...
+            </p>
           ) : (
             groupedCartArray.map((group, index) => (
               <div

@@ -3,7 +3,6 @@
 import { SlipVerify } from "@/api/slip-verifications.api";
 import { QrcodeReceive } from "@/components/order/QrcodeReceive";
 import { GroupedData } from "@/types/menuOrder.type";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { InsertSlip, ScanQrTitle } from "../components/order";
 import RenderOrderItems from "../components/order/RenderOrderItems";
@@ -13,7 +12,6 @@ import useOrders from "../hooks/useOrders";
 import useSlipVerify from "../hooks/useSlipVerify";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
-  const router = useRouter();
   const [openCamera, setOpenCamera] = useState(false);
   const [qrcode, setQrcode] = useState<SlipVerify[]>([]);
   const [resetKey, setResetKey] = useState(0);
@@ -27,7 +25,17 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
   // useSlipVerify
   const { verifySlip } = useSlipVerify();
   const totalPrice = useMemo(() => getTotalPrice(), [orders]);
-
+  const verifySlipWithLoading = useCallback(
+    async (qrcodeData: string, orderId: string, amount: string) => {
+      setLoading(true);
+      try {
+        await verifySlip(qrcodeData, orderId, amount);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [verifySlip]
+  );
   const grouped = useMemo(() => {
     const result: GroupedData = {};
     orders?.forEach(item => {
@@ -81,59 +89,6 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     setResetKey(prev => prev + 1);
   }, []);
 
-  // // Updated verifySlip with reset mechanism
-  // const verifySlip = useCallback(async () => {
-  //   if (qrcode.length === 0 || isReset) return;
-
-  //   try {
-  //     const prepareData: SlipVerify = {
-  //       amount: String(totalPrice),
-  //       qrcode_data: qrcode[0].qrcode_data,
-  //       orderId: orderId,
-  //     };
-
-  //     setLoading(true);
-  //     setError(null);
-
-  //     const parsed = slipVerifySchema.safeParse(prepareData);
-  //     if (!parsed.success) {
-  //       throw new Error("Invalid slip data format");
-  //     }
-
-  //     const slipRes = await checkSlipApi.postSlip(parsed.data);
-
-  //     if (slipRes && slipRes.data) {
-  //       console.log("✅ Slip verification successful:", slipRes.data);
-
-  //       // Update order status
-  //       const orderRes = await ordersApi.updateOrderPurchase(orderId);
-  //       console.log("✅ Order updated:", orderRes.data);
-
-  //       if (orderRes.data.length !== 0) {
-  //         router.push(`purchase/${orderId}`);
-  //       }
-  //     } else {
-  //       throw new Error("No data received from slip verification");
-  //     }
-  //   } catch (error: any) {
-  //     console.error("❌ Slip verification failed:", error);
-
-  //     let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
-
-  //     if (error.response?.status === 400) {
-  //       errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
-  //     } else if (error.response?.status === 404) {
-  //       errorMessage = "ไม่พบข้อมูลสลิป";
-  //     } else if (error.response?.status === 422) {
-  //       errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
-  //     } else if (error.message) {
-  //       errorMessage = error.message;
-  //     }
-
-  //     setError(errorMessage);
-  //   }
-  // }, [qrcode, totalPrice, orderId, isReset, router]);
-
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
@@ -146,7 +101,11 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
 
   useEffect(() => {
     if (qrcode.length === 0) return;
-    verifySlip(qrcode[0].qrcode_data, orderId, totalPrice.toString());
+    verifySlipWithLoading(
+      qrcode[0].qrcode_data,
+      orderId,
+      totalPrice.toString()
+    );
   }, [qrcode, orderId, totalPrice, verifySlip]);
 
   if (!orderId) {

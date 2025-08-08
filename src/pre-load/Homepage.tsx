@@ -1,38 +1,30 @@
 "use client";
+
 import { LucideCheckCircle, LucideStore } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { shopApi } from "../api/shop.api";
 
-// Mock data
-const mockShops = [
-  { id: "1", name: "ร้านข้าวมันไก่", active: true },
-  { id: "2", name: "ก๋วยเตี๋ยวเรือโกฮับ", active: false },
-  { id: "3", name: "หมูกระทะฟินเว่อร์", active: true },
-  { id: "4", name: "ปิ้งย่างเกาหลี by เจ๊หมู", active: true },
-  { id: "5", name: "ข้าวผัดเจ๊นุ่น", active: false },
-];
+type Shop = {
+  id: string;
+  name: string;
+  active: boolean;
+};
 
 const Homepage = () => {
   const router = useRouter();
-  const [shops, setShops] = useState<typeof mockShops>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
 
   useEffect(() => {
-    // simulate API call
-    const fetchMockShops = async () => {
-      setTimeout(() => {
-        setShops(mockShops);
-      }, 500);
+    const getShops = async () => {
+      try {
+        const res = await shopApi.getAllShop();
+        setShops(res.data.data);
+      } catch (error) {
+        console.error("❌ Failed to load shops:", error);
+      }
     };
-    fetchMockShops();
-  }, []);
-
-  useEffect(() => {
-    const getAllShop = async () => {
-      const res = await shopApi.getAllShop();
-      console.log("res", res.data);
-    };
-    getAllShop();
+    getShops();
   }, []);
 
   return (
@@ -47,12 +39,29 @@ const Homepage = () => {
         </p>
       </section>
 
+      {/* Shop List */}
+      <section className="max-w-5xl mx-auto px-4 mt-14">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          🛒 ร้านค้าที่เปิดให้บริการ
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {shops.map(shop => (
+            <ShopCard
+              key={shop.id}
+              id={shop.id}
+              name={shop.name}
+              active={shop.active}
+              onClick={() => router.push(`/menus/${shop.id}`)}
+            />
+          ))}
+        </div>
+      </section>
       {/* Flow */}
       <section className="max-w-3xl mx-auto mt-10 px-4">
         <h2 className="text-xl font-semibold text-gray-800 mb-4">
           📦 ขั้นตอนการทำงาน
         </h2>
-        <ul className="space-y-4">
+        <pre className="space-y-4">
           {[
             "1. ลูกค้าเลือกอาหาร → กดสั่ง",
             "2. หน้าชำระเงิน → ลูกค้าจ่ายเงิน",
@@ -65,25 +74,7 @@ const Homepage = () => {
               <span className="text-gray-700">{step}</span>
             </li>
           ))}
-        </ul>
-      </section>
-
-      {/* Shop List */}
-      <section className="max-w-5xl mx-auto px-4 mt-14">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          🛒 ร้านค้าที่เปิดให้บริการ
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {shops.map(s => (
-            <ShopCard
-              key={s.id}
-              id={s.id}
-              name={s.name}
-              active={s.active}
-              onClick={path => router.push(path)}
-            />
-          ))}
-        </div>
+        </pre>
       </section>
     </main>
   );
@@ -93,14 +84,19 @@ type ShopCardProps = {
   id: string;
   name: string;
   active: boolean;
-  onClick: (path: string) => void;
+  onClick: () => void;
 };
 
-const ShopCard = ({ id, name, active, onClick }: ShopCardProps) => {
+const ShopCard = ({ name, active, onClick }: ShopCardProps) => {
   return (
     <div
-      onClick={() => onClick(`menus/${id}`)}
-      className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === "Enter" || e.key === " ") onClick();
+      }}
+      className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold text-gray-800 truncate">{name}</h3>
@@ -117,7 +113,14 @@ const ShopCard = ({ id, name, active, onClick }: ShopCardProps) => {
             ปิดให้บริการ
           </span>
         )}
-        <button className="text-blue-600 hover:underline text-sm font-medium">
+        <button
+          onClick={e => {
+            e.stopPropagation(); // ป้องกัน event bubble
+            onClick();
+          }}
+          className="text-blue-600 hover:underline text-sm font-medium"
+          aria-label={`ดูเมนูร้าน ${name}`}
+        >
           ดูเมนู
         </button>
       </div>
