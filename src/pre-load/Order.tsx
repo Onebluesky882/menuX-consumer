@@ -1,20 +1,19 @@
 "use client";
 
-import { ordersApi } from "@/api/orders.api";
-import { checkSlipApi, SlipVerify } from "@/api/slip-verifications.api";
+import { SlipVerify } from "@/api/slip-verifications.api";
 import { QrcodeReceive } from "@/components/order/QrcodeReceive";
-import { slipVerifySchema } from "@/schema/slipVerifySchema";
-import { GroupedData, RawOrderItem } from "@/types/menuOrder.type";
+import { GroupedData } from "@/types/menuOrder.type";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { InsertSlip, ScanQrTitle } from "../components/order";
 import RenderOrderItems from "../components/order/RenderOrderItems";
 import RenderQrCodeData from "../components/order/RenderQrcode";
 import { Webcam } from "../components/order/Webcam";
+import useOrders from "../hooks/useOrders";
+import useSlipVerify from "../hooks/useSlipVerify";
 
 const OrderSummary = ({ orderId }: { orderId: string }) => {
   const router = useRouter();
-  const [orders, setOrders] = useState<RawOrderItem[]>([]);
   const [openCamera, setOpenCamera] = useState(false);
   const [qrcode, setQrcode] = useState<SlipVerify[]>([]);
   const [resetKey, setResetKey] = useState(0);
@@ -22,12 +21,12 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
   const [error, setError] = useState<string | null>(null);
   const [isReset, setIsReset] = useState(false);
 
-  const totalPrice = useMemo(() => {
-    return orders?.reduce(
-      (sum, i) => sum + Number(i.quantity) * Number(i.priceEach),
-      0
-    );
-  }, [orders]);
+  // useOrders
+  const { orders, fetchOrder, getTotalPrice } = useOrders();
+
+  // useSlipVerify
+  const { verifySlip } = useSlipVerify();
+  const totalPrice = useMemo(() => getTotalPrice(), [orders]);
 
   const grouped = useMemo(() => {
     const result: GroupedData = {};
@@ -71,26 +70,8 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     setOpenCamera(prev => !prev);
   }, []);
 
-  const fetchOrder = useCallback(async () => {
-    if (!orderId) return;
-    try {
-      const res = await ordersApi.getOrderById(orderId);
-      setOrders(res.data.data);
-    } catch (error: any) {
-      let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
-      console.error("❌ Failed to fetch order:", error);
-      if (error.response?.status === 400) {
-        errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
-      } else if (error.response?.status === 404) {
-        errorMessage = "ไม่พบข้อมูลสลิป";
-      } else if (error.response?.status === 422) {
-        errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      setError(errorMessage);
-    }
+  useEffect(() => {
+    fetchOrder(orderId);
   }, [orderId]);
 
   const resetQrCode = useCallback(() => {
@@ -98,83 +79,75 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
     setError(null);
     setIsReset(true);
     setResetKey(prev => prev + 1);
-    console.log("🔄 QR Code reset triggered");
   }, []);
 
-  // Updated verifySlip with reset mechanism
-  const verifySlip = useCallback(async () => {
-    if (qrcode.length === 0 || isReset) return;
+  // // Updated verifySlip with reset mechanism
+  // const verifySlip = useCallback(async () => {
+  //   if (qrcode.length === 0 || isReset) return;
 
-    try {
-      const prepareData: SlipVerify = {
-        amount: String(totalPrice),
-        qrcode_data: qrcode[0].qrcode_data,
-        orderId: orderId,
-      };
+  //   try {
+  //     const prepareData: SlipVerify = {
+  //       amount: String(totalPrice),
+  //       qrcode_data: qrcode[0].qrcode_data,
+  //       orderId: orderId,
+  //     };
 
-      setLoading(true);
-      setError(null);
+  //     setLoading(true);
+  //     setError(null);
 
-      const parsed = slipVerifySchema.safeParse(prepareData);
-      if (!parsed.success) {
-        throw new Error("Invalid slip data format");
-      }
+  //     const parsed = slipVerifySchema.safeParse(prepareData);
+  //     if (!parsed.success) {
+  //       throw new Error("Invalid slip data format");
+  //     }
 
-      const slipRes = await checkSlipApi.postSlip(parsed.data);
+  //     const slipRes = await checkSlipApi.postSlip(parsed.data);
 
-      if (slipRes && slipRes.data) {
-        console.log("✅ Slip verification successful:", slipRes.data);
+  //     if (slipRes && slipRes.data) {
+  //       console.log("✅ Slip verification successful:", slipRes.data);
 
-        // Update order status
-        const orderRes = await ordersApi.updateOrderPurchase(orderId);
-        console.log("✅ Order updated:", orderRes.data);
+  //       // Update order status
+  //       const orderRes = await ordersApi.updateOrderPurchase(orderId);
+  //       console.log("✅ Order updated:", orderRes.data);
 
-        if (orderRes.data.length !== 0) {
-          router.push(`purchase/${orderId}`);
-        }
-      } else {
-        throw new Error("No data received from slip verification");
-      }
-    } catch (error: any) {
-      console.error("❌ Slip verification failed:", error);
+  //       if (orderRes.data.length !== 0) {
+  //         router.push(`purchase/${orderId}`);
+  //       }
+  //     } else {
+  //       throw new Error("No data received from slip verification");
+  //     }
+  //   } catch (error: any) {
+  //     console.error("❌ Slip verification failed:", error);
 
-      let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
+  //     let errorMessage = "เกิดข้อผิดพลาดในการตรวจสอบสลิป";
 
-      if (error.response?.status === 400) {
-        errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
-      } else if (error.response?.status === 404) {
-        errorMessage = "ไม่พบข้อมูลสลิป";
-      } else if (error.response?.status === 422) {
-        errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+  //     if (error.response?.status === 400) {
+  //       errorMessage = "ข้อมูล QR Code ไม่ถูกต้อง กรุณาสแกนใหม่";
+  //     } else if (error.response?.status === 404) {
+  //       errorMessage = "ไม่พบข้อมูลสลิป";
+  //     } else if (error.response?.status === 422) {
+  //       errorMessage = "จำนวนเงินไม่ตรงกับสลิป";
+  //     } else if (error.message) {
+  //       errorMessage = error.message;
+  //     }
 
-      setError(errorMessage);
+  //     setError(errorMessage);
+  //   }
+  // }, [qrcode, totalPrice, orderId, isReset, router]);
 
-      // Auto reset after 3 seconds
-    }
-  }, [qrcode, totalPrice, orderId, isReset, router]);
-
-  // ใส่ใน component OrderSummary
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => {
         resetQrCode();
-      }, 5000); // 5 วินาที
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
   }, [error, resetQrCode]);
 
-  // Effects
   useEffect(() => {
-    fetchOrder();
-  }, [fetchOrder]);
-
-  useEffect(() => {
-    verifySlip();
-  }, [verifySlip]);
+    if (qrcode.length === 0) return;
+    verifySlip(qrcode[0].qrcode_data, orderId, totalPrice.toString());
+  }, [qrcode, orderId, totalPrice, verifySlip]);
 
   if (!orderId) {
     return (
@@ -208,7 +181,7 @@ const OrderSummary = ({ orderId }: { orderId: string }) => {
           error={error}
         />
       </div>
-      // insert slip
+
       <InsertSlip />
     </div>
   );

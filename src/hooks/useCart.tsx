@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { CartItem, MenuItem, OrderPayload } from "../types/menuOrder.type";
 import { ordersApi } from "../api/orders.api";
+import { CartItem, MenuItem, OrderPayload } from "../types/menuOrder.type";
 
 type CartStore = {
   cartItems: CartItem[];
@@ -16,10 +16,12 @@ type CartStore = {
 
 export const useCart = create<CartStore>((set, get) => ({
   cartItems: [],
-  addCart: (item) =>
-    set((state) => ({
+
+  addCart: item =>
+    set(state => ({
       cartItems: [...state.cartItems, item],
     })),
+
   clearCart: () => set({ cartItems: [] }),
 
   getTotalOrderPrice: () => {
@@ -31,16 +33,14 @@ export const useCart = create<CartStore>((set, get) => ({
 
   getTotalOrderItems: () => {
     const items = get().cartItems;
-    return items.reduce((total, item) => {
-      return total + Number(item.quantity);
-    }, 0);
+    return items.reduce((total, item) => total + item.quantity, 0);
   },
 
-  submitCart: async (shopId) => {
+  submitCart: async shopId => {
     const currentCart = get().cartItems;
     const payload: OrderPayload = {
       shopId,
-      items: currentCart.map((menu) => ({
+      items: currentCart.map(menu => ({
         menuId: menu.menuId,
         quantity: menu.quantity,
         priceEach: menu.basePrice,
@@ -60,31 +60,40 @@ export const useCart = create<CartStore>((set, get) => ({
     const cartItems = get().cartItems;
     const addCart = get().addCart;
 
-    const menu = menusOption.find((menu) =>
-      menu.menuOptions.some((option) => option.id === optionId)
+    const menu = menusOption.find(menu =>
+      menu.menuOptions.some(option => option.id === optionId)
     );
-
     if (!menu) return;
 
     const selectedOption = menu.menuOptions.find(
-      (option) => option.id === optionId
+      option => option.id === optionId
     );
     if (!selectedOption) return;
 
     const price = Number(selectedOption.price);
-
     const existing = cartItems.find(
-      (item) =>
-        item.menuId === menu.id && item.selectedOption.id === selectedOption.id
+      item =>
+        item.menuId === menu.id &&
+        item.optionId === optionId &&
+        item.selectedOption.label === selectedOption.label
     );
     if (existing) {
-      const updateItem = {
-        ...existing,
-        quantity: existing.quantity + 1,
-        totalPrice: price * (existing.quantity + 1),
-      };
-      addCart(updateItem);
+      // เพิ่ม quantity ถ้ามีอยู่แล้ว
+      set(state => ({
+        cartItems: state.cartItems.map(item =>
+          item.menuId === existing.menuId &&
+          item.optionId === optionId &&
+          item.selectedOption.label === selectedOption.label
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+                totalPrice: price * (item.quantity + 1),
+              }
+            : item
+        ),
+      }));
     } else {
+      // เพิ่ม item ใหม่ ถ้ายังไม่มี
       const newItem: CartItem = {
         menuId: menu.id,
         basePrice: price,
@@ -98,47 +107,44 @@ export const useCart = create<CartStore>((set, get) => ({
     }
   },
 
-  increaseQuantity: (optionId) => {
-    const updatedCart = get().cartItems.reduce<Record<string, number>>(
-      (acc, item) => {
-        acc[item.optionId] = Number(item.selectedOption.price);
-        return acc;
-      },
-      {}
-    );
+  increaseQuantity: optionId => {
+    let priceMap: Record<string, number> = {};
+    get().cartItems.forEach(item => {
+      priceMap[item.optionId] = Number(item.selectedOption.price);
+    });
 
-    set((state) => ({
-      cartItems: state.cartItems.map((item) => {
+    set(state => ({
+      cartItems: state.cartItems.map(item => {
         if (item.optionId === optionId) {
           const newQuantity = item.quantity + 1;
-          const newTotalPrice = newQuantity * updatedCart[optionId];
-          return { ...item, quantity: newQuantity, totalPrice: newTotalPrice };
+          const newTotalPrice = newQuantity * priceMap[optionId];
+          return {
+            ...item,
+            quantity: newQuantity,
+            totalPrice: newTotalPrice,
+          };
         }
         return item;
       }),
     }));
-    return { cartItems: updatedCart };
   },
 
-  decreaseQuantity: (optionId) => {
-    const updatedCart = get().cartItems.reduce<Record<string, number>>(
-      (acc, item) => {
-        acc[item.optionId] = Number(item.selectedOption.price);
-        return acc;
-      },
-      {}
-    );
+  decreaseQuantity: optionId => {
+    let priceMap: Record<string, number> = {};
+    get().cartItems.forEach(item => {
+      priceMap[item.optionId] = Number(item.selectedOption.price);
+    });
 
-    set((state) => ({
+    set(state => ({
       cartItems: state.cartItems
-        .map((item) => {
+        .map(item => {
           if (item.optionId === optionId) {
             const quantity = item.quantity - 1;
             if (quantity <= 0) return null;
-            const newTotalPrice = quantity * updatedCart[optionId];
+            const newTotalPrice = quantity * priceMap[optionId];
             return {
               ...item,
-              quantity: quantity,
+              quantity,
               totalPrice: newTotalPrice,
             };
           }
@@ -146,6 +152,5 @@ export const useCart = create<CartStore>((set, get) => ({
         })
         .filter(Boolean) as CartItem[],
     }));
-    return { cartItems: updatedCart };
   },
 }));
